@@ -1,0 +1,112 @@
+name: CI/CD — ERP Master
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: '20'
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
+jobs:
+  # ─── Lint + Type Check ──────────────────────────────────────────────────────
+  quality:
+    name: Lint & TypeCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+  # ─── Build ──────────────────────────────────────────────────────────────────
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: quality
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build all apps
+        run: npm run build
+
+  # ─── DAST Security Scan (OWASP ZAP) ────────────────────────────────────────
+  security:
+    name: OWASP ZAP Security Scan
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ZAP Baseline Scan — ERP
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: 'https://erp.masteretiquetas.com'
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-I'
+        continue-on-error: true  # não bloqueia deploy — apenas reporta
+
+  # ─── Deploy (Vercel via Doppler) ────────────────────────────────────────────
+  deploy:
+    name: Deploy Production
+    runs-on: ubuntu-latest
+    needs: [build, quality]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Deploy ERP
+        run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} --cwd=apps/erp
+
+      - name: Deploy E-commerce
+        run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} --cwd=apps/ecommerce
+
+      - name: Deploy Portal Cliente
+        run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} --cwd=apps/portal-cliente
+
+      - name: Deploy Portal Representante
+        run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} --cwd=apps/portal-representante
+
+      - name: Deploy Portal Fornecedor
+        run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} --cwd=apps/portal-fornecedor
+
+      - name: Notify Telegram on deploy
+        if: success()
+        run: |
+          curl -s -X POST \
+            "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "chat_id": "${{ secrets.TELEGRAM_CEO_CHAT_ID }}",
+              "text": "✅ Deploy concluído com sucesso!\n\nCommit: ${{ github.sha }}\nAutor: ${{ github.actor }}\nBranch: main",
+              "parse_mode": "HTML"
+            }'

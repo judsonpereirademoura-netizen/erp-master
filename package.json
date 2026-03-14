@@ -1,0 +1,37 @@
+{
+  "name": "erp-master",
+  "version": "2.0.0",
+  "private": true,
+  "description": "ERP Master - Master Rotulos e Etiquetas",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "dev:erp": "turbo run dev --filter=erp",
+    "dev:ecommerce": "turbo run dev --filter=ecommerce",
+    "dev:portal-cliente": "turbo run dev --filter=portal-cliente",
+    "dev:portal-representante": "turbo run dev --filter=portal-representante",
+    "dev:portal-fornecedor": "turbo run dev --filter=portal-fornecedor",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "db:migrate": "supabase db push",
+    "db:reset": "supabase db reset",
+    "db:types": "supabase gen types typescript --linked > packages/database/src/types/database.ts",
+    "db:seed": "supabase db seed",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "prettier": "^3.3.0",
+    "turbo": "^2.3.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}

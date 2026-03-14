@@ -1,0 +1,147 @@
+# ============================================================
+# ERP MASTER v2.0 — Cloudflare Configuration
+# Domínio: masteretiquetas.com (já registrado no GoDaddy)
+# ============================================================
+#
+# PASSO 1 — Conectar Cloudflare ao GoDaddy:
+# 1. Acesse cloudflare.com → Add a Site → masteretiquetas.com
+# 2. Anote os 2 nameservers Cloudflare (ex: ns1.cloudflare.com)
+# 3. No GoDaddy: Meus Produtos → masteretiquetas.com → DNS
+#    → Nameservers → Alterar → Personalizado
+#    → Insira os 2 nameservers do Cloudflare
+# 4. Aguarde propagação (até 48h, geralmente < 2h)
+#
+# PASSO 2 — Criar registros DNS abaixo no painel Cloudflare
+# ============================================================
+
+dns_records:
+
+  # ─── E-commerce (raiz) ──────────────────────────────────────────────────────
+  - type: A
+    name: "@"
+    content: "76.76.21.21"         # IP Vercel (confirmar em vercel.com/docs)
+    proxied: true                   # laranja = Cloudflare ativo
+    ttl: auto
+    comment: "E-commerce masteretiquetas.com — Vercel"
+
+  - type: CNAME
+    name: "www"
+    content: "masteretiquetas.com"
+    proxied: true
+    ttl: auto
+    comment: "Redirect www → raiz (configurar Page Rule)"
+
+  # ─── ERP interno ────────────────────────────────────────────────────────────
+  - type: CNAME
+    name: "erp"
+    content: "cname.vercel-dns.com"
+    proxied: true
+    ttl: auto
+    comment: "ERP Master — erp.masteretiquetas.com"
+
+  # ─── Portal do Cliente ──────────────────────────────────────────────────────
+  - type: CNAME
+    name: "cliente"
+    content: "cname.vercel-dns.com"
+    proxied: true
+    ttl: auto
+    comment: "Portal Cliente — cliente.masteretiquetas.com"
+
+  # ─── Portal do Representante ────────────────────────────────────────────────
+  - type: CNAME
+    name: "representante"
+    content: "cname.vercel-dns.com"
+    proxied: true
+    ttl: auto
+    comment: "Portal Representante — representante.masteretiquetas.com"
+
+  # ─── Portal do Fornecedor ───────────────────────────────────────────────────
+  - type: CNAME
+    name: "fornecedor"
+    content: "cname.vercel-dns.com"
+    proxied: true
+    ttl: auto
+    comment: "Portal Fornecedor — fornecedor.masteretiquetas.com"
+
+  # ─── ZapConnect (JÁ EXISTE — NÃO ALTERAR) ──────────────────────────────────
+  # whatsapp.masteretiquetas.com — manter configuração existente intacta
+
+  # ─── Email (recomendado para evitar spoofing) ────────────────────────────────
+  - type: TXT
+    name: "@"
+    content: "v=spf1 include:_spf.google.com ~all"   # ajustar ao seu provedor de email
+    proxied: false
+    comment: "SPF — anti-spoofing"
+
+  - type: TXT
+    name: "_dmarc"
+    content: "v=DMARC1; p=quarantine; rua=mailto:ti@masteretiquetas.com"
+    proxied: false
+    comment: "DMARC"
+
+# ============================================================
+# CONFIGURAÇÕES DE SEGURANÇA NO PAINEL CLOUDFLARE
+# ============================================================
+
+ssl_tls:
+  mode: "Full (strict)"    # Requer certificado válido na origem (Vercel tem)
+  hsts:
+    enabled: true
+    max_age: 31536000       # 1 ano
+    include_subdomains: true
+    preload: true
+  always_use_https: true
+  min_tls_version: "1.2"   # Bloqueia TLS 1.0 e 1.1
+
+# ─── Page Rules ─────────────────────────────────────────────────────────────
+page_rules:
+  - url: "www.masteretiquetas.com/*"
+    action: "Forwarding URL"
+    code: 301
+    destination: "https://masteretiquetas.com/$1"
+    comment: "Redirect www → canonical"
+
+# ─── WAF Rules por subdomínio ────────────────────────────────────────────────
+waf_custom_rules:
+
+  # Bloqueia acesso ao ERP fora do Brasil
+  - name: "ERP - Brasil apenas"
+    expression: >
+      (http.host eq "erp.masteretiquetas.com") and
+      (ip.geoip.country ne "BR")
+    action: block
+    description: "ERP só acessível do Brasil"
+
+  # Rate limiting agressivo no ERP
+  - name: "ERP - Rate limit login"
+    expression: >
+      (http.host eq "erp.masteretiquetas.com") and
+      (http.request.uri.path contains "/auth/login")
+    action: block
+    ratelimit:
+      requests_per_period: 10
+      period: 60
+      mitigation_timeout: 600
+    description: "Máximo 10 tentativas de login por minuto"
+
+  # Protege endpoint de webhook do ZapConnect/Meta
+  - name: "WhatsApp webhook - só IPs Meta"
+    expression: >
+      (http.host eq "whatsapp.masteretiquetas.com") and
+      (http.request.uri.path contains "/webhook") and
+      not (ip.src in {15.197.148.0/22 3.5.136.0/21})  # IPs Meta aproximados
+    action: challenge
+    description: "Webhook Meta — suspeito se não vier dos IPs da Meta"
+
+# ─── Rate Limits por subdomínio ──────────────────────────────────────────────
+rate_limits:
+  - subdomain: "masteretiquetas.com"
+    requests_per_minute: 300
+  - subdomain: "erp.masteretiquetas.com"
+    requests_per_minute: 60
+  - subdomain: "cliente.masteretiquetas.com"
+    requests_per_minute: 120
+  - subdomain: "representante.masteretiquetas.com"
+    requests_per_minute: 120
+  - subdomain: "fornecedor.masteretiquetas.com"
+    requests_per_minute: 60

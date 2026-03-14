@@ -1,0 +1,54 @@
+{
+  "projects": [
+    {
+      "name": "erp-master-erp",
+      "root": "apps/erp",
+      "framework": "nextjs",
+      "domain": "erp.masteretiquetas.com",
+      "env_group": "erp-master-production",
+      "regions": ["gru1"],
+      "comment": "ERP interno — São Paulo region para menor latência"
+    },
+    {
+      "name": "erp-master-ecommerce",
+      "root": "apps/ecommerce",
+      "framework": "nextjs",
+      "domain": "masteretiquetas.com",
+      "env_group": "erp-master-production",
+      "regions": ["gru1"],
+      "comment": "E-commerce B2B"
+    },
+    {
+      "name": "erp-master-portal-cliente",
+      "root": "apps/portal-cliente",
+      "framework": "nextjs",
+      "domain": "cliente.masteretiquetas.com",
+      "env_group": "erp-master-production",
+      "regions": ["gru1"]
+    },
+    {
+      "name": "erp-master-portal-representante",
+      "root": "apps/portal-representante",
+      "framework": "nextjs",
+      "domain": "representante.masteretiquetas.com",
+      "env_group": "erp-master-production",
+      "regions": ["gru1"]
+    },
+    {
+      "name": "erp-master-portal-fornecedor",
+      "root": "apps/portal-fornecedor",
+      "framework": "nextjs",
+      "domain": "fornecedor.masteretiquetas.com",
+      "env_group": "erp-master-production",
+      "regions": ["gru1"]
+    }
+  ],
+  "setup_steps": [
+    "1. Acesse vercel.com → Add New Project → Import Git Repository",
+    "2. Selecione o repositório erp-master no GitHub",
+    "3. Para CADA app acima: configure Root Directory, Framework e domínio",
+    "4. Instale a integração Doppler no Vercel (marketplace.vercel.com)",
+    "5. Vincule o projeto Doppler 'erp-master' a cada projeto Vercel",
+    "6. O Doppler injeta todas as env vars automaticamente no deploy"
+  ]
+}
