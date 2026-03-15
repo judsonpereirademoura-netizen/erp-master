@@ -1,0 +1,20 @@
+export * from './permissions'
+
+export type PerfilUsuario =
+  | 'ceo'
+  | 'admin'
+  | 'gerente_comercial'
+  | 'representante'
+  | 'supervisor_producao'
+  | 'operador_producao'
+  | 'analista_qualidade'
+  | 'analista_fiscal'
+  | 'analista_rh'
+  | 'dpo'
+  | 'tecnico_manutencao'
+  | 'comprador'
+  | 'portal_cliente'
+  | 'portal_representante'
+  | 'portal_fornecedor'
+
+export type TipoPortal = 'erp' | 'ecommerce' | 'cliente' | 'representante' | 'fornecedor'

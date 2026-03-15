@@ -1,0 +1,6 @@
+{
+  "buildCommand": "npm run build --workspace=apps/erp",
+  "outputDirectory": "apps/erp/.next",
+  "installCommand": "npm install",
+  "framework": "nextjs"
+}
