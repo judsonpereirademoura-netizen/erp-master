@@ -18,7 +18,7 @@ export const PERMISSOES: Record<PerfilUsuario, { modulos: string[]; portal: Tipo
   gerente_comercial:   { modulos: ['crm','vendas','comissoes','ecommerce','relatorios'], portal: 'erp' },
   representante:       { modulos: ['crm','vendas','comissoes'], portal: 'erp' },
   supervisor_producao: { modulos: ['producao','estoque','separacao','manutencao','oee'], portal: 'erp' },
-  operador_producao:   { modulos: ['producao_leitura','apontamentos'], portal: 'erp' },
+  operador_producao:   { modulos: ['producao','producao_leitura','apontamentos'], portal: 'erp' },
   analista_qualidade:  { modulos: ['qualidade','ifs','recall','calibracoes','alergenios'], portal: 'erp' },
   analista_fiscal:     { modulos: ['fiscal','nfe','sped','relatorios_fiscal'], portal: 'erp' },
   analista_rh:         { modulos: ['rh','esocial','folha','treinamentos'], portal: 'erp' },
